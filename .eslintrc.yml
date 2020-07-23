@@ -1,0 +1,10 @@
+---
+parserOptions:
+  ecmaVersion: 9
+  jsx: true
+env:
+  commonjs: true
+  node: true
+extends:
+  - "eslint:recommended"
+  - "plugin:react/recommended"

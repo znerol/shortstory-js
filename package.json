@@ -1,0 +1,35 @@
+{
+  "name": "shortstory",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "bin": {
+    "shortstory": "./lib/cli.js"
+  },
+  "browser": {
+    "./lib/cli.js": false
+  },
+  "scripts": {
+    "build": "babel src/*.js -d lib",
+    "lint": "eslint --ext=js,ts src"
+  },
+  "author": "Lorenz Schori",
+  "repository": "github:znerol/shortstory-js",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "html-to-react": "^1.4.3",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "peerDependencies": {
+    "react": "^16.0",
+    "react-dom": "^16.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.10.5",
+    "@babel/plugin-transform-react-jsx": "^7.10.4",
+    "eslint": "^7.5.0",
+    "eslint-plugin-react": "^7.20.3"
+  }
+}
