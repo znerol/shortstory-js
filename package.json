@@ -10,7 +10,7 @@
     "./lib/cli.js": false
   },
   "scripts": {
-    "build": "babel src/*.js -d lib",
+    "build": "tsc --sourceMap",
     "lint": "eslint --ext=js,ts src"
   },
   "author": "Lorenz Schori",
@@ -26,10 +26,12 @@
     "react-dom": "^16.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.5",
-    "@babel/core": "^7.10.5",
-    "@babel/plugin-transform-react-jsx": "^7.10.4",
+    "@types/react": "^16.9.43",
+    "@types/react-dom": "^16.9.8",
+    "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "@typescript-eslint/parser": "^3.7.0",
     "eslint": "^7.5.0",
-    "eslint-plugin-react": "^7.20.3"
+    "eslint-plugin-react": "^7.20.3",
+    "typescript": "^3.9.7"
   }
 }

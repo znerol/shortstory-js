@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "jsx": "react",
+        "outDir": "./lib",
+        "target": "es2018",
+        "module": "CommonJS"
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}

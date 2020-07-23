@@ -1,8 +1,8 @@
-const HtmlToReact = require('html-to-react');
-const React = require('react');
+import * as HtmlToReact from 'html-to-react';
+import * as React from 'react';
 
-function select(component, selector) {
-    if (React.isValidElement(component)) {
+function select(component, selector: (any) => boolean): React.Component[] {
+    if (React.isValidElement<React.PropsWithChildren<any>>(component)) {
         var result = [].concat(...React.Children.toArray(component.props.children).map(subcomp => {
             return select(subcomp, selector);
         }));
@@ -16,9 +16,9 @@ function select(component, selector) {
     }
 }
 
-function flatten(component, selector, parents = []) {
+function flatten(component, selector: (any) => boolean, parents = []): React.Component[] {
     var path = [...parents];
-    if (React.isValidElement(component)) {
+    if (React.isValidElement<React.PropsWithChildren<any>>(component)) {
         path.push(component);
         const result = [].concat(...React.Children.toArray(component.props.children).map(subcomp => {
             return flatten(subcomp, selector, path);
@@ -33,7 +33,7 @@ function flatten(component, selector, parents = []) {
     }
 }
 
-const templates = {
+export const templates = {
     Document: function Document(props) {
         return (<body>
             {React.Children.map(props.children, child => select(child, elem => elem.type === templates.Story))}
@@ -111,7 +111,7 @@ const templates = {
 
 const processNodeDefinitions = HtmlToReact.ProcessNodeDefinitions();
 
-const processingInstructions = [
+export const processingInstructions = [
   {
     shouldProcessNode: (node) => node.name in templates,
     processNode: (node, children, index) => React.createElement(templates[node.name], {...node.attribs, key: index}, children),
@@ -126,16 +126,10 @@ const processingInstructions = [
   },
 ];
 
-function parse(markup) {
+export function parse(markup: string) {
     const parser = new HtmlToReact.Parser({'xmlMode': true});
     return parser.parseWithInstructions(
         markup,
         HtmlToReact.IsValidNodeDefinitions.alwaysValid,
         processingInstructions);
 }
-
-module.exports = {
-  templates,
-  processingInstructions,
-  parse
-};
