@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
-  "bin": {
-    "shortstory": "./lib/cli.js"
-  },
   "browser": {
     "./lib/cli.js": false
   },
