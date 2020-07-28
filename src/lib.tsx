@@ -26,13 +26,14 @@ interface TransformOptions {
     span: React.ReactElement;
 }
 
+export function isElementOfType(node: React.ReactNode, ...types : string[]): boolean {
+    return typeof node === "object" &&
+        "type" in node &&
+        typeof node.type === "string" &&
+        types.includes(node.type);
+}
+
 export function transform(children: React.ReactNode, options: TransformOptions = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
-    const isElementOfType = (node: React.ReactNode, ...types : string[]) => {
-        return typeof node === "object" &&
-            "type" in node &&
-            typeof node.type === "string" &&
-            types.includes(node.type);
-    }
     const dfsopts : DfsOptions = {
         prune: path => isElementOfType(path[path.length-1], "Content", "Br"),
         select: path => isElementOfType(path[path.length-1], "Content", "Br"),
