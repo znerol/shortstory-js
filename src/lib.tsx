@@ -1,23 +1,8 @@
 import * as HtmlToReact from 'html-to-react';
 import * as React from 'react';
 
-function select(component, selector: (any) => boolean): React.Component[] {
-    if (React.isValidElement<React.PropsWithChildren<any>>(component)) {
-        var result = [].concat(...React.Children.toArray(component.props.children).map(subcomp => {
-            return select(subcomp, selector);
-        }));
-        if (selector(component)) {
-            result.push(component);
-        }
-        return result;
-    }
-    else {
-        return [];
-    }
-}
-
 function flatten(component, selector: (any) => boolean, parents = []): React.Component[] {
-    var path = [...parents];
+    const path = [...parents];
     if (React.isValidElement<React.PropsWithChildren<any>>(component)) {
         path.push(component);
         const result = [].concat(...React.Children.toArray(component.props.children).map(subcomp => {
@@ -33,7 +18,7 @@ function flatten(component, selector: (any) => boolean, parents = []): React.Com
     }
 }
 
-export function transform(children: React.ReactNode, options = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.Node {
+export function transform(children: React.ReactNode, options = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
     const types = [
         "Content",
         "Br",
@@ -57,7 +42,7 @@ export function transform(children: React.ReactNode, options = {article: <articl
             const curspan = span.props.AppliedCharacterStyle;
 
             const sections = React.Children.toArray(accum.article.props.children);
-            var section;
+            let section;
             if (para.props.AppliedParagraphStyle === accum.cursection) {
                 section = sections.pop();
             }
@@ -66,7 +51,7 @@ export function transform(children: React.ReactNode, options = {article: <articl
             }
 
             const paragraphs = React.Children.toArray(section.props.children);
-            var paragraph;
+            let paragraph;
             if (para.props.AppliedParagraphStyle === accum.curpara) {
                 paragraph = paragraphs.pop();
             }
@@ -111,7 +96,7 @@ export const processingInstructions = [
   },
 ];
 
-export function parse(markup: string) {
+export function parse(markup: string): React.ReactElement {
     const parser = new HtmlToReact.Parser({'xmlMode': true});
     return parser.parseWithInstructions(
         markup,
