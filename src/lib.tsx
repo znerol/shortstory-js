@@ -33,89 +33,74 @@ function flatten(component, selector: (any) => boolean, parents = []): React.Com
     }
 }
 
-export const templates = {
-    Document: function Document(props) {
-        return (<body>
-            {React.Children.map(props.children, child => select(child, elem => elem.type === templates.Story))}
-        </body>);
-    },
-    Story: function Story(props) {
-        const types = [
-            templates.Content,
-            templates.Br,
-        ];
-        const flat = [].concat(...React.Children.toArray(props.children).map(child => flatten(child, elem => types.includes(elem.type))));
+export function transform(children: React.ReactNode, options = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.Node {
+    const types = [
+        "Content",
+        "Br",
+    ];
+    const flat = [].concat(...React.Children.toArray(children).map(child => flatten(child, elem => types.includes(elem.type))));
 
-        const { article } = flat.reduce((accum, val) => {
-            const br = val.find(child => child.type === templates.Br);
-            const content = val.find(child => child.type === templates.Content);
-            const para = val.find(child => child.type === templates.ParagraphStyleRange);
-            const span = val.find(child => child.type === templates.CharacterStyleRange);
+    const { article } = flat.reduce((accum, val) => {
+        const br = val.find(child => child.type === "Br");
+        const content = val.find(child => child.type === "Content");
+        const para = val.find(child => child.type === "ParagraphStyleRange");
+        const span = val.find(child => child.type === "CharacterStyleRange");
 
-            if (br !== undefined) {
-                return {
-                    ...accum,
-                    curpara: "",
-                };
+        if (br !== undefined) {
+            return {
+                ...accum,
+                curpara: "",
+            };
+        }
+        else if (para !== undefined && span !== undefined && content !== undefined) {
+            const curpara = para.props.AppliedParagraphStyle;
+            const curspan = span.props.AppliedCharacterStyle;
+
+            const sections = React.Children.toArray(accum.article.props.children);
+            var section;
+            if (para.props.AppliedParagraphStyle === accum.cursection) {
+                section = sections.pop();
             }
-            else if (para !== undefined && span !== undefined && content !== undefined) {
-                const curpara = para.props.AppliedParagraphStyle;
-                const curspan = span.props.AppliedCharacterStyle;
+            else {
+                section = React.cloneElement(options.section, {className: curpara});
+            }
 
-                const sections = React.Children.toArray(accum.article.props.children);
-                var section;
-                if (para.props.AppliedParagraphStyle === accum.cursection) {
-                    section = sections.pop();
-                }
-                else {
-                    section = (<section className={curpara}></section>);
-                }
+            const paragraphs = React.Children.toArray(section.props.children);
+            var paragraph;
+            if (para.props.AppliedParagraphStyle === accum.curpara) {
+                paragraph = paragraphs.pop();
+            }
+            else {
+                paragraph = React.cloneElement(options.para, {className: curpara});
+            }
 
-                const paragraphs = React.Children.toArray(section.props.children);
-                var paragraph;
-                if (para.props.AppliedParagraphStyle === accum.curpara) {
-                    paragraph = paragraphs.pop();
-                }
-                else {
-                    paragraph = (<p className={curpara}></p>);
-                }
+            const texts = React.Children.toArray(paragraph.props.children);
+            const text = React.cloneElement(options.span, {className: curspan}, content.props.children);
 
-                const texts = React.Children.toArray(paragraph.props.children);
-                const text = (<span className={curspan}>{content.props.children}</span>);
-
-                return {
-                    article: React.cloneElement(
-                        accum.article, null, ...sections, React.cloneElement(
-                            section, null, ...paragraphs, React.cloneElement(
-                                paragraph, null, ...texts, text
-                            )
+            return {
+                article: React.cloneElement(
+                    accum.article, null, ...sections, React.cloneElement(
+                        section, null, ...paragraphs, React.cloneElement(
+                            paragraph, null, ...texts, text
                         )
-                    ),
-                    cursection: curpara,
-                    curpara: curpara,
-                };
-            }
-        }, {
-            article: (<article></article>),
-            cursection: "",
-            curpara: "",
-        });
+                    )
+                ),
+                cursection: curpara,
+                curpara: curpara,
+            };
+        }
+    }, {
+        article: React.cloneElement(options.article),
+        cursection: "",
+        curpara: "",
+    });
 
-        return article;
-    },
-    ParagraphStyleRange: (props) => (props.children),
-    CharacterStyleRange: (props) => (props.children),
-    Content: (props) => (props.children),
-    Br: () => "",
+    return article;
 }
 
 const processNodeDefinitions = HtmlToReact.ProcessNodeDefinitions();
 
 export const processingInstructions = [
-  {
-    shouldProcessNode: (node) => node.name in templates,
-    processNode: (node, children, index) => React.createElement(templates[node.name], {...node.attribs, key: index}, children),
-  },
   {
     shouldProcessNode: (node) => ['cdata', 'directive'].includes(node.type),
     processNode: (_, children) => children,
