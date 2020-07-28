@@ -1,21 +1,15 @@
 import * as HtmlToReact from 'html-to-react';
 import * as React from 'react';
 
-function flatten(component, selector: (any) => boolean, parents = []): React.Component[] {
+export function* dfs(node: React.ReactNode, parents = []) : Generator<React.ReactNode[], void, void> {
     const path = [...parents];
-    if (React.isValidElement<React.PropsWithChildren<any>>(component)) {
-        path.push(component);
-        const result = [].concat(...React.Children.toArray(component.props.children).map(subcomp => {
-            return flatten(subcomp, selector, path);
-        }));
-        if (selector(component)) {
-            result.push(path);
+    path.push(node);
+    if (typeof node === "object" && "props" in node) {
+        for (const child of [].concat(...React.Children.toArray(node.props.children))) {
+            yield* dfs(child, path)
         }
-        return result;
     }
-    else {
-        return [];
-    }
+    yield path
 }
 
 export function transform(children: React.ReactNode, options = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
@@ -23,7 +17,7 @@ export function transform(children: React.ReactNode, options = {article: <articl
         "Content",
         "Br",
     ];
-    const flat = [].concat(...React.Children.toArray(children).map(child => flatten(child, elem => types.includes(elem.type))));
+    const flat = [].concat(...React.Children.toArray(children).map(child => Array.from(dfs(child)))).filter(path=> types.includes(path[path.length-1].type));
 
     const { article } = flat.reduce((accum, val) => {
         const br = val.find(child => child.type === "Br");
