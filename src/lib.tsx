@@ -9,7 +9,7 @@ interface DfsOptions {
 export function* dfs(children: React.ReactNode, options: DfsOptions = {}, parents = []) : Generator<React.ReactNode[], void, void> {
     for (const node of React.Children.toArray(children)) {
         const path = [...parents];
-        path.push(node);
+        path.unshift(node);
         if ((options.prune && !options.prune(path)) && typeof node === "object" && "props" in node) {
             yield* dfs(node.props.children, options, path)
         }
@@ -35,8 +35,8 @@ export function isElementOfType(node: React.ReactNode, ...types : string[]): boo
 
 export function transform(children: React.ReactNode, options: TransformOptions = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
     const dfsopts : DfsOptions = {
-        prune: path => isElementOfType(path[path.length-1], "Content", "Br"),
-        select: path => isElementOfType(path[path.length-1], "Content", "Br"),
+        prune: path => isElementOfType(path[0], "Content", "Br"),
+        select: path => isElementOfType(path[0], "Content", "Br"),
     }
 
     const flat = Array.from(dfs(children, dfsopts));
