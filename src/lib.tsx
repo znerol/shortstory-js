@@ -1,23 +1,48 @@
 import * as HtmlToReact from 'html-to-react';
 import * as React from 'react';
 
-export function* dfs(node: React.ReactNode, parents = []) : Generator<React.ReactNode[], void, void> {
-    const path = [...parents];
-    path.push(node);
-    if (typeof node === "object" && "props" in node) {
-        for (const child of [].concat(...React.Children.toArray(node.props.children))) {
-            yield* dfs(child, path)
-        }
-    }
-    yield path
+interface DfsOptions {
+    prune?: (path: React.ReactNode[]) => boolean;
+    select?: (path: React.ReactNode[]) => boolean;
 }
 
-export function transform(children: React.ReactNode, options = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
+export function* dfs(node: React.ReactNode, options: DfsOptions = {}, parents = []) : Generator<React.ReactNode[], void, void> {
+    const path = [...parents];
+    path.push(node);
+    if ((options.prune && !options.prune(path)) && typeof node === "object" && "props" in node) {
+        for (const child of [].concat(...React.Children.toArray(node.props.children))) {
+            yield* dfs(child, options, path)
+        }
+    }
+    if (options.select && options.select(path)) {
+        yield path
+    }
+}
+
+interface TransformOptions {
+    article: React.ReactElement;
+    section: React.ReactElement;
+    para: React.ReactElement;
+    span: React.ReactElement;
+}
+
+export function transform(children: React.ReactNode, options: TransformOptions = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
     const types = [
         "Content",
         "Br",
     ];
-    const flat = [].concat(...React.Children.toArray(children).map(child => Array.from(dfs(child)))).filter(path=> types.includes(path[path.length-1].type));
+    const selector = (node: React.ReactNode) => {
+        return typeof node === "object" &&
+            "type" in node &&
+            typeof node.type === "string" &&
+            types.includes(node.type);
+    }
+    const dfsopts : DfsOptions = {
+        prune: path => selector(path[path.length-1]),
+        select: path => selector(path[path.length-1]),
+    }
+
+    const flat = [].concat(...React.Children.toArray(children).map(child => Array.from(dfs(child, dfsopts))));
 
     const { article } = flat.reduce((accum, val) => {
         const br = val.find(child => child.type === "Br");
