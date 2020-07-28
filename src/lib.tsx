@@ -6,16 +6,16 @@ interface DfsOptions {
     select?: (path: React.ReactNode[]) => boolean;
 }
 
-export function* dfs(node: React.ReactNode, options: DfsOptions = {}, parents = []) : Generator<React.ReactNode[], void, void> {
-    const path = [...parents];
-    path.push(node);
-    if ((options.prune && !options.prune(path)) && typeof node === "object" && "props" in node) {
-        for (const child of [].concat(...React.Children.toArray(node.props.children))) {
-            yield* dfs(child, options, path)
+export function* dfs(children: React.ReactNode, options: DfsOptions = {}, parents = []) : Generator<React.ReactNode[], void, void> {
+    for (const node of React.Children.toArray(children)) {
+        const path = [...parents];
+        path.push(node);
+        if ((options.prune && !options.prune(path)) && typeof node === "object" && "props" in node) {
+            yield* dfs(node.props.children, options, path)
         }
-    }
-    if (options.select && options.select(path)) {
-        yield path
+        if (options.select && options.select(path)) {
+            yield path
+        }
     }
 }
 
@@ -27,28 +27,24 @@ interface TransformOptions {
 }
 
 export function transform(children: React.ReactNode, options: TransformOptions = {article: <article></article>, section: <section></section>, para: <p></p>, span: <span></span>}): React.ReactElement {
-    const types = [
-        "Content",
-        "Br",
-    ];
-    const selector = (node: React.ReactNode) => {
+    const isElementOfType = (node: React.ReactNode, ...types : string[]) => {
         return typeof node === "object" &&
             "type" in node &&
             typeof node.type === "string" &&
             types.includes(node.type);
     }
     const dfsopts : DfsOptions = {
-        prune: path => selector(path[path.length-1]),
-        select: path => selector(path[path.length-1]),
+        prune: path => isElementOfType(path[path.length-1], "Content", "Br"),
+        select: path => isElementOfType(path[path.length-1], "Content", "Br"),
     }
 
-    const flat = [].concat(...React.Children.toArray(children).map(child => Array.from(dfs(child, dfsopts))));
+    const flat = Array.from(dfs(children, dfsopts));
 
     const { article } = flat.reduce((accum, val) => {
-        const br = val.find(child => child.type === "Br");
-        const content = val.find(child => child.type === "Content");
-        const para = val.find(child => child.type === "ParagraphStyleRange");
-        const span = val.find(child => child.type === "CharacterStyleRange");
+        const br = val.find(child => isElementOfType(child, "Br")) as React.ReactElement;
+        const content = val.find(child => isElementOfType(child, "Content")) as React.ReactElement;
+        const para = val.find(child => isElementOfType(child, "ParagraphStyleRange")) as React.ReactElement;
+        const span = val.find(child => isElementOfType(child, "CharacterStyleRange")) as React.ReactElement;
 
         if (br !== undefined) {
             return {
